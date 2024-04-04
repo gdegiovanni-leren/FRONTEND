@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "npm run build"
+    "start": "npx http-server ./dist"
   },
   "dependencies": {
     "@splidejs/vue-splide": "^0.6.12",
