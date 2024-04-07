@@ -138,13 +138,15 @@ if(result.isvalid == true){
 
 async function deleteAllUsers(){
 
+  const s = store
+
   Swal.fire({
   title: "Do you want to delete all users that have been not connection in the past two days?",
   showCancelButton: true,
   confirmButtonText: "DELETE",
 }).then(async (result) => {
   if (result.isConfirmed) {
-    const res = await this.store.deleteAllUsers()
+    const res = await s.deleteAllUsers()
     console.log('res isvalid',res.isvalid)
     if(res.isvalid == true){
       Swal.fire({
@@ -161,7 +163,7 @@ async function deleteAllUsers(){
       confirmButtonText: 'OK'
       });
     }
-   this.store.fetchAllUsers()
+   s.fetchAllUsers()
   }
 });
 

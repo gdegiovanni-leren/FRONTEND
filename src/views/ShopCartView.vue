@@ -118,54 +118,71 @@ async function closeAndRestartValues(){
   purchase_success.value = false
 }
 
-async function onPurcharse(){
+async function pay(){
 
-    console.log('@ ON PUCHARSE CALL @')
-    const cid = store.cart_id
+  const cid = store.cart_id
 
-    const mercadopago = new MercadoPago("TEST-52481e79-1871-4e0f-97c4-a0ec4fb89ce8", {
+  const mercadopago = new MercadoPago("TEST-9a6af9fc-8332-4bc2-8364-65d306126962", {
   locale: "en-US",
-});
-console.log(mercadopago)
+  });
 
-/*
-/ Mercado Pago SDK
-import { MercadoPagoConfig } from 'mercadopago';
-// Add Your credentials
-const client = new MercadoPagoConfig({ accessToken: 'YOUR_ACCESS_TOKEN' });
-*/
 
 try{
-        const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${cid}/create_preference`
-        const response = await axios.post(URL)
+    const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${cid}/create_preference`
+    const response = await axios.post(URL)
 
-        console.log(response)
-        if(response){
-          const preference = response.data.message.id
-           console.log(preference)
-              mercadopago.bricks().create("wallet", "mp", {
-              initialization: {
-                preferenceId: preference,
-                redirectMode: "modal"
-              },
-            });
-        }
+    console.log(response)
+    console.log(response.data)
+    console.log(response.data.preference_id)
+    if(response && response.data.preference_id){
+      const preference_id = response.data.preference_id
+       console.log(preference_id)
+          mercadopago.bricks().create("wallet", "mp", {
+          initialization: {
+            preferenceId: preference_id,
+            redirectMode: "modal"
+          },
+          callbacks: {
+            onReady: () => { console.log('ON READY CALLBACK ')},
+            onSubmit: () => {
+              console.log('ON SUBMIT CALLBACK ')
+              checkout.value = true
+            },
+            onError: (error) => console.error(error),
+          },
+        });
+    }
+
+    }catch(e){
+      console.log(e)
+    }
 
 
-
-
-}catch(e){
-  console.log(e)
 }
 
+async function onPurcharse(){
 
-
-    return
+  const cid = store.cart_id
+  console.log(cid)
 
     if(cid){
         try{
         const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${cid}/purchase`
         const response = await axios.post(URL)
+
+        console.log(response)
+
+        if(response && response.data.status == false && response.data.pending_payment == true){
+          Swal.fire({
+            title: 'Error!',
+            text: 'Payment required!',
+            icon: 'error',
+            confirmButtonText: 'OK'
+            });
+            return
+        }
+
+        /*
           console.log(response)
           if(response && response.data.status == true){
             let pids = []
@@ -200,15 +217,19 @@ try{
             showMessageError.value = true
 
           }
-
+          */
       }catch(e){
         console.log(e)
         messageError = 'There was an error trying to finish purchase.'
         showMessageError.value = true
       }
     }else{
-      messageError = 'There was an error trying to finish purchase. cart id not found.'
-      showMessageError.value = true
+      Swal.fire({
+            title: 'Error!',
+            text: 'There was an error trying to finish purchase. cart id not found. Please login again and retry your purchase.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+            });
     }
 
 }
@@ -222,7 +243,6 @@ store.productsOnCart.forEach(element =>{
 
 <template>
 <Navbar></Navbar>
-   <div id="mp"></div>
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex flex-col lg:flex-row lg:justify-between">
       <div class="w-full lg:w-2/3">
@@ -329,11 +349,19 @@ store.productsOnCart.forEach(element =>{
               <span>${{Math.round((total) * 1e11) / 1e11}}</span>
             </div>
             <div v-if="authStore.user.role == 'user' || authStore.user.role == 'premium' ">
-            <button @click="onPurcharse"
+              <button @click="pay"
             :class=" store.productsOnCart.length > 0 ? 'mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
             ' mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled-opacity-50'">
-              Checkout
+              PAY WITH MERCADOPAGO
             </button>
+            <div id="mp"></div>
+                <div v-if="checkout">
+                <button @click="onPurcharse"
+                :class=" store.productsOnCart.length > 0 ? 'mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
+                ' mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled-opacity-50'">
+                  Checkout
+                </button>
+              </div>
           </div>
           </div>
         </div>
