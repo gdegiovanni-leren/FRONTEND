@@ -28,8 +28,8 @@ selectedProduct = store.products.payload.filter(element => element._id === Strin
 
 const authStore = useAuthStore()
 
-
-const URL = 'http://localhost:8080'
+const URL = `${import.meta.env.VITE_BASE_URL}`
+console.log('trying to connect socket to',URL)
 const socket = io(URL);
 console.log(socket)
 socket.on("connect", () => {
