@@ -32,16 +32,27 @@ export const useAdminStore = defineStore("admin", {
   actions: {
 
      async handleFileUpload(e) {
+      this.images = []
       // debugger;
       console.log('call method handle files')
        console.log(e.target.files)
 
        const files = e.target.files
-       console.log(files.length)
+       if(files && files.length > 4){
+        Swal.fire({
+          title: 'Alert',
+          text: 'Only a maximum of 5 images will be uploaded.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+          });
+       }
        if(files && files.length > 0){
-        console.log('files exists')
+        let count = 0;
         for (const image of files) {
+          if( count < 5){
           this.images.push(image)
+          }
+          count++
         }
        }
        console.log(this.images)
@@ -92,10 +103,11 @@ export const useAdminStore = defineStore("admin", {
         form.append('category',this.category)
         form.append('status',1)
 
-        //append images
+        //append images (max 5)
         for (let i=0; i<this.images.length; i++){
-          console.log('form append image',this.images[i])
+          if(i < 5){
           form.append('thumbnails', this.images[i])
+          }
         }
 
         console.log('sending form',form)

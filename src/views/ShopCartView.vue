@@ -17,6 +17,12 @@ let purchase_success = ref(false)
 let purchase_incomplete = ref(false)
 let purchase = null
 
+let step_1 = ref(true)
+let step_2 = ref(false)
+let step_3 = ref(false)
+
+let confirm_payment = ref(false)
+
 
 /*
 for (let i = 0; i < store.productsOnCart.length; i++) {
@@ -91,6 +97,22 @@ async function increase(_pid){
     }
   }
 
+
+async function confirmCart(){
+  console.log('CONFIRM CART')
+  Swal.fire({
+      icon: "warning",
+      text: "SI CONFIRMA EL CARRITO NO PODRÁ SEGUIR AGREGANDO CANTIDADES O BORRAR PRODUCTOS HASTA COMPLETAR SU COMPRA, ¿DESEA CONTINUAR?",
+      showCancelButton: true,
+      allowOutsideClick: () => false
+      }).then((result) => {
+          if (result.isConfirmed) {
+            step_1.value = false
+            step_2.value = true
+          }
+       });
+}
+
 async function emptyCart(){
 
     const cid = store.cart_id
@@ -125,36 +147,41 @@ async function pay(){
   const mercadopago = new MercadoPago("TEST-9a6af9fc-8332-4bc2-8364-65d306126962", {
   locale: "en-US",
   });
-
+  confirm_payment.value = true
 
 try{
     const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${cid}/create_preference`
     const response = await axios.post(URL)
-
-    console.log(response)
-    console.log(response.data)
     console.log(response.data.preference_id)
-    if(response && response.data.preference_id){
-      const preference_id = response.data.preference_id
-       console.log(preference_id)
-          mercadopago.bricks().create("wallet", "mp", {
-          initialization: {
-            preferenceId: preference_id,
-            redirectMode: "modal"
-          },
-          callbacks: {
-            onReady: () => { console.log('ON READY CALLBACK ')},
-            onSubmit: () => {
-              console.log('ON SUBMIT CALLBACK ')
-              checkout.value = true
+      if(response && response.data.preference_id){
+        const preference_id = response.data.preference_id
+            mercadopago.bricks().create("wallet", "mp", {
+            initialization: {
+              preferenceId: preference_id,
+              redirectMode: "modal"
             },
-            onError: (error) => console.error(error),
-          },
-        });
-    }
-
+            callbacks: {
+              onReady: () => {},
+              onSubmit: () => {
+                console.log('ON SUBMIT CALLBACK')
+                step_3.value = true
+              },
+              onError: (error) => console.error(error),
+            },
+          });
+      }
     }catch(e){
       console.log(e)
+      Swal.fire({
+            title: 'Error!',
+            text: 'Ups we have a problem to generate your payment. Try again.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+            });
+      step_3.value = false
+      step_2.value = false
+      step_1.value = true
+      confirm_payment.value = false
     }
 
 
@@ -166,25 +193,22 @@ async function onPurcharse(){
   console.log(cid)
 
     if(cid){
-        try{
+
+      try{
+
         const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${cid}/purchase`
         const response = await axios.post(URL)
-
         console.log(response)
 
         if(response && response.data.status == false && response.data.pending_payment == true){
           Swal.fire({
-            title: 'Error!',
+            title: 'INFO',
             text: 'Payment required!',
-            icon: 'error',
+            icon: 'warning',
             confirmButtonText: 'OK'
             });
             return
-        }
-
-        /*
-          console.log(response)
-          if(response && response.data.status == true){
+        }else if(response.data.status == true && response.data.pending_payment == false){
             let pids = []
             for await (let product of response.data.products_success) {
               pids.push(product._id)
@@ -206,22 +230,35 @@ async function onPurcharse(){
               store.productsOnCart = []
               total.value = 0
               //complete purchase, display modal
-              purchase_success.value = true
+              Swal.fire({
+              title: 'SUCCESS',
+              text: 'Purchase completed! We will shortly be sending you an email with your purchase details. Thanks for trusting us!',
+              icon: 'success',
+              confirmButtonText: 'OK'
+            });
+
             }else{
               //partial purchase, display modal
               purchase_incomplete.value = true
-            }
-          }else{
-            //unknown error
-            messageError = response.data.message ? response.data.message : 'There was an error trying to finish purcharse..'
-            showMessageError.value = true
 
-          }
-          */
+              Swal.fire({
+              title: 'SUCCESS',
+              text: 'Your purchase was successull! Although due to lack of stock some of your products could not be included.Dont worry, you can continue shopping and we will notify you when there is stock!. And we will refund your money inmediate.',
+              icon: 'success',
+              confirmButtonText: 'OK'
+            });
+            }
+        }
+
       }catch(e){
         console.log(e)
-        messageError = 'There was an error trying to finish purchase.'
-        showMessageError.value = true
+        Swal.fire({
+            title: 'Error',
+            text: 'There was an error to finish purchase. Try again.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+            });
+            return
       }
     }else{
       Swal.fire({
@@ -231,13 +268,14 @@ async function onPurcharse(){
             confirmButtonText: 'OK'
             });
     }
-
 }
+
 
 store.productsOnCart.forEach(element =>{
   console.log('total exec')
   total.value += ( element.price * element.quantity )
 })
+
 
 </script>
 
@@ -250,7 +288,7 @@ store.productsOnCart.forEach(element =>{
           <div class="flex justify-between">
             <h2 class="text-lg font-medium leading-6 text-gray-900">Shopping Cart</h2>
             <div v-if="authStore.user.role == 'user' || authStore.user.role == 'premium' ">
-            <button  @click="emptyCart()"
+            <button v-if="step_1 == true" @click="emptyCart()"
             :class=" store.productsOnCart.length > 0 ? 'mt-4 p-4 bg-gray-600 mr-2 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
              ' disabled-opacity-50 mt-4 p-4 bg-gray-600 mr-2 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' "
             >
@@ -298,13 +336,13 @@ store.productsOnCart.forEach(element =>{
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center justify-between w-24">
-                        <button class="text-gray-500 hover:text-gray-700" @click="decrease(product._id)" aria-label="Decrease quantity">
+                        <button v-if="step_1 == true" class="text-gray-500 hover:text-gray-700" @click="decrease(product._id)" aria-label="Decrease quantity">
                           <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
                             <path d="M5 10h10v1H5z"></path>
                           </svg>
                         </button>
                         <span class="text-gray-700">{{ product.quantity }}</span>
-                        <button class="text-gray-500 hover:text-gray-700" @click="increase(product._id)" aria-label="Increase quantity">
+                        <button v-if="step_1 == true" class="text-gray-500 hover:text-gray-700" @click="increase(product._id)" aria-label="Increase quantity">
                           <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
                             <path d="M10 5v10h1V5z"></path>
                             <path d="M5 10h10v1H5z"></path>
@@ -316,7 +354,7 @@ store.productsOnCart.forEach(element =>{
                       <div class="text-sm text-gray-900">${{Math.round((product.quantity * product.price) * 1e12) / 1e12}}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <button class="text-gray-500 hover:text-gray-700" @click="removeItem(product._id)" aria-label="Remove item">
+                      <button v-if="step_1 == true" class="text-gray-500 hover:text-gray-700" @click="removeItem(product._id)" aria-label="Remove item">
                         <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
                           <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.3 6.3a1 1 0 011.4 0L10 8.6l2.3-2.3a1 1 0 011.4 1.4L11.4 10l2.3 2.3a1 1 0 01-1.4 1.4L10 11.4l-2.3 2.3a1 1 0 01-1.4-1.4L8.6 10 6.3 7.7a1 1 0 010-1.4z"></path>
                         </svg>
@@ -348,14 +386,27 @@ store.productsOnCart.forEach(element =>{
               <span>Total:</span>
               <span>${{Math.round((total) * 1e11) / 1e11}}</span>
             </div>
-            <div v-if="authStore.user.role == 'user' || authStore.user.role == 'premium' ">
+            <div v-if="authStore.user.role == 'user' || authStore.user.role == 'premium'" class="mt-4">
+              <div v-if="step_1 == true">
+              <h1 class="text-lg mt-1">STEP 1</h1>
+              <button @click="confirmCart"
+            :class=" store.productsOnCart.length > 0 ? 'mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
+            ' mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled-opacity-50'">
+              CONFIRM CART
+            </button>
+             </div>
+             <div v-if="step_2 == true && confirm_payment == false">
+              <h2 class="text-lg mt-1">STEP 2</h2>
               <button @click="pay"
             :class=" store.productsOnCart.length > 0 ? 'mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
             ' mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled-opacity-50'">
               PAY WITH MERCADOPAGO
             </button>
+          </div>
             <div id="mp"></div>
-                <div v-if="checkout">
+                <div v-if="step_3 == true">
+                 <label><strong>Important:</strong> We are waiting for your payment to be confirmed, if your payment is pending you will not be able to continue.
+                If you have already made your payment, all you have to do is click on the following button to confirm your purchase!</label>
                 <button @click="onPurcharse"
                 :class=" store.productsOnCart.length > 0 ? 'mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50' :
                 ' mt-4 w-full bg-gray-800 text-white text-center py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled-opacity-50'">
