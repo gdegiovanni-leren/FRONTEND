@@ -6,7 +6,6 @@ import Navbar from '../components/Navbar.vue';
 import { useProductStore } from '../stores/ProductsStore';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/AuthStore';
-import axios from "axios";
 import { io } from "socket.io-client";
 
 let addProduct = ref(false)
@@ -28,10 +27,11 @@ selectedProduct = store.products.payload.filter(element => element._id === Strin
 
 const authStore = useAuthStore()
 
+/* SOCKETS */
+
 const URL = `${import.meta.env.VITE_BASE_URL}`
-console.log('trying to connect socket to',URL)
+console.log('trying to connect socket to', URL)
 const socket = io(URL);
-console.log(socket)
 socket.on("connect", () => {
   console.log('connected')
 });
@@ -41,66 +41,26 @@ socket.on("disconnect", () => {
 });
 
 socket.on('incoming_messages', messages => {
-  console.log('incoming message received?')
   console.log(selectedProduct[0])
-  console.log(messages)
   if(selectedProduct && selectedProduct[0]._id == messages._id){
-    console.log('comments repalace!')
     selectedProduct[0].comments = messages.comments
-  }else{
-    console.log('product diff')
   }
 })
 
 
-
-
-async function getProduct(_id) {
-
-    try{
-    const URL = `${import.meta.env.VITE_BASE_URL}api/products/${_id}`;
-    const response = await axios.get(URL);
-    return await response.data;
-
-    }catch(e){
-        console.log(e)
-        //TODO: HANDLE ERROR
-    }
-
- return null
-}
-
-
 async function addComment(_id) {
 
-    /*
-    try {
-        const URL = `${import.meta.env.VITE_BASE_URL}api/products/${productId}/comments`
-        const response = await axios.post(URL, {
-            comment: comment.value,
-            username: authStore.user.username
-        })
-        console.log(response);
-    }
-    catch (err) {
-        console.log(err);
-    } finally {
-        comment.value = ''
-        //await store.getComments(productId)
-    }
-    */
    const data = {
     product_id: _id,
     username: authStore.user.username,
     comment: comment.value
    }
-   console.log('sending data socket?',data)
    socket.emit('add_comment', data)
 }
 
+
 async function addToCart(_id){
   const result = await store.addToCart(selectedProduct[0]._id)
-  console.log('result ?',result)
   if(result == true)  addProduct.value = true
 }
 
@@ -128,7 +88,6 @@ onMounted(() => {
                 <h1 class="text-2xl font-bold mb-4">{{ selectedProduct[0].title }}</h1>
                 <h2 class="text-1xl font-bold mb-4">{{ selectedProduct[0].description }}</h2>
                 <h3 class="text-2xl font-bold mb-4">{{ selectedProduct[0].code }}</h3>
-
 
                 <!-- Size Selector -->
                 <div class="mb-4">

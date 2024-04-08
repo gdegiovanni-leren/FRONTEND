@@ -123,6 +123,7 @@ if(result.isvalid == true){
    icon: 'success',
    confirmButtonText: 'OK'
    });
+   store.fetchAllUsers()
  }else{
    Swal.fire({
    title: 'Error!',

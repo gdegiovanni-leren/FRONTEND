@@ -62,12 +62,9 @@ async function uploadPremiumFiles() {
     }
 
     console.log('AL LEAST ONE FILE FOUND')
-
-    const result = await authStore.uploadPremiumFiles()
-
-
-
+    await authStore.uploadPremiumFiles()
 }
+
 
 async function updatePremiumMembrecy() {
     if(authStore.user.role == 'admin'){
@@ -88,8 +85,6 @@ async function updatePremiumMembrecy() {
         });
         return
     }
-
-
    await authStore.updatePremiumMembrecy()
 }
 
@@ -125,7 +120,7 @@ async function updateProfile(){
         <div class="lg:flex">
             <!-- Profile picture -->
             <div class="lg:w-1/3">
-                <img  :src="authStore.user.profile_picture ? authStore.user.profile_picture : './src/assets/profile-default.png'" alt="Shoe" class="w-full h-auto object-contain">
+                <img  :src="authStore.user.profile_picture ? authStore.user.profile_picture : './src/assets/profile-default.png'" class="w-full h-auto object-contain">
             </div>
             <!-- Profile Details -->
             <div class="lg:w-2/3 lg:pl-8 lg:pt-1">
