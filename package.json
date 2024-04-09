@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "npx http-server -P http://127.0.0.1:6647 ./dist"
+    "start": "npx http-server ./dist"
   },
   "dependencies": {
     "@splidejs/vue-splide": "^0.6.12",

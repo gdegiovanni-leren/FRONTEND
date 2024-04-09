@@ -66,6 +66,7 @@ const router = createRouter({
       name: "Passwordrecovery",
       component: () => import('../views/PasswordrecoveryView.vue')
     },
+    { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
 
