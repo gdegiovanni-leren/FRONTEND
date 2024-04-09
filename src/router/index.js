@@ -1,11 +1,11 @@
-import {  createRouter, createWebHistory } from 'vue-router'
+import {  createRouter, createWebHistory,  createWebHashHistory } from 'vue-router'
 
 console.log('ROUTER INITIALIZATION')
 import { useAuthStore } from '../stores/AuthStore';
 
-
+//history: createWebHistory(`${import.meta.env.VITE_BASE_URL}`),
 const router = createRouter({
-  history: createWebHistory(`${import.meta.env.VITE_BASE_URL}`),
+  history:  createWebHashHistory(),
   routes: [
     {
       path: "/login",
