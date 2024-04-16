@@ -54,17 +54,15 @@ export const useAuthStore = defineStore('auth',  {
 
     },
 
-    async validateEmail(email){
-      const re = /\S+@\S+\.\S+/;
-      return (re.test(email) == false);
-    },
+
 
 
     async register(temp_username, password, confirmPassword){
 
       console.log('calling register')
+      const re = /\S+@\S+\.\S+/;
 
-      if(validateEmail(temp_username)){
+      if(re.test(temp_username) == false){
          Swal.fire({
             title: 'Error!',
             text: 'You must enter a valid email format . Example a@a.a',
