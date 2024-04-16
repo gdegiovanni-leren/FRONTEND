@@ -30,10 +30,14 @@ export const useProductStore = defineStore("product", {
 
         console.log('@ NO CART ID COOKIE FOUND , GENERATING... @')
         //new cart ID
-        const URL = `${import.meta.env.VITE_BASE_URL}api/carts`;
-        const response = await axios.get(URL);
-        this.cart_id = await response.data;
-        localStorage.setItem('cart_id', response.data)
+        try{
+          const URL = `${import.meta.env.VITE_BASE_URL}api/carts`;
+          const response = await axios.get(URL);
+          this.cart_id = await response.data;
+          localStorage.setItem('cart_id', response.data)
+        }catch(e){
+          console.error(e)
+        }
 
       }else{
 
@@ -53,6 +57,15 @@ export const useProductStore = defineStore("product", {
                 }
             }else{
               console.error(response)
+              console.log('retrying generate cart...')
+              try{
+              const URL = `${import.meta.env.VITE_BASE_URL}api/carts`;
+              const response = await axios.get(URL);
+              this.cart_id = await response.data;
+              localStorage.setItem('cart_id', response.data)
+              }catch(e){
+                console.error(e)
+              }
             }
       }
       //console.log(this.cart_id)
