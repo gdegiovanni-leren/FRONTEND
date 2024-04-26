@@ -16,10 +16,7 @@ const username = userStore.user.username
 
 onMounted(() => {
   console.log(`the component (HOMEVIEW) is now mounted.`)
-  if(!localStorage.getItem('cart_id') || localStorage.getItem('cart_id') == ''){
   productStore.getCart()
-  }
-
   productStore.getProducts()
 })
 
