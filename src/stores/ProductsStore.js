@@ -47,6 +47,7 @@ export const useProductStore = defineStore("product", {
         const URL = `${import.meta.env.VITE_BASE_URL}api/carts/${this.cart_id}`;
         const response = await axios.get(URL);
             if(response.data.status == true){
+              this.productsOnCart = []
               let cartWithProducts = response.data.cart.products ? response.data.cart.products : []
                 for(let i = 0 ; i < cartWithProducts.length ; i++){
                   let a = {
