@@ -59,6 +59,7 @@ export const useProductStore = defineStore("product", {
             }else{
               console.error(response)
               console.log('retrying generate cart...')
+              this.productsOnCart = []
               try{
               const URL = `${import.meta.env.VITE_BASE_URL}api/carts`;
               const response = await axios.get(URL);
